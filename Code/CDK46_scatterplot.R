@@ -55,9 +55,7 @@ prote <- proteomics%>%
   select(DepMap_ID,CDK4,CDK6)%>%
   gather(Egene,expr,-DepMap_ID)%>%
   mutate(esource="proteomics")
-
 expr <- CCLE%>%rbind(prote)
-  
 combinedD <- expr%>%
   inner_join(DepD,by="DepMap_ID")%>%
   left_join(mut_annot,by="DepMap_ID")%>%
@@ -66,7 +64,6 @@ combinedD <- expr%>%
   mutate(Mutation =factor(case_when(is.na(Hugo_Symbol)~"WT",
                                     TRUE~Hugo_Symbol),
                           levels=c("RB1","WT")))
-
 #===== 3) Scatter Plotting =====
 sp <- combinedD%>%
   filter(!(esource=="proteomics"&source=="DEMETER"))%>%
