@@ -1,3 +1,9 @@
+#=== R version 3.6.3 ###
+#=== Package taigr version 2.8.0.25 ###
+#=== Package dplyr version 1.0.2 ###
+#=== Package tidyr version 1.1.2 ###
+#=== Package ggplot2 version 3.3.2 ###
+#=== Package ggpubr version 0.4.0 ###
 require(taigr)
 require(dplyr)
 require(tidyr)
