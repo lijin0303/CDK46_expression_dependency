@@ -4,6 +4,7 @@
 #=== Package tidyr version 1.1.2 ###
 #=== Package ggplot2 version 3.3.2 ###
 #=== Package ggpubr version 0.4.0 ###
+outdir <- "~/Desktop"
 require(taigr)
 require(dplyr)
 require(tidyr)
@@ -108,12 +109,16 @@ sp <- combinedD%>%
           geom_vline(xintercept = 0, linetype="dashed")+
           labs(x=paste0(unique(.$Dgene)," ",unique(.$source)),
                y=paste0(unique(.$Egene)," proteomics"))+ylim(c(-4,4))})
+#===== 4) Plot & Statistics output =====
+ggarrange(plotlist=sp$plot[5:12], nrow = 2,ncol=4,common.legend = T,align="hv")+
+  ggsave(width = 12,height = 6,dpi = 2000,
+         filename = paste0(outdir,"/Figure3e_CDK46_scatter.pdf"))
 
-ggarrange(plotlist=sp$plot, nrow = 3,ncol=4,common.legend = T,align="hv")+
-  ggsave(width = 12,height = 9,dpi = 2000,
-         filename = "~/Desktop/CDK46_scatter.pdf")
+ggarrange(plotlist=sp$plot[1:4], nrow = 1,ncol=4,common.legend = T,align="hv")+
+  ggsave(width = 12,height = 3,dpi = 2000,
+         filename = paste0(outdir,"/Extended_Figure3b_CDK46_scatter.pdf"))
 
-combinedD%>%
+list(`Plot Data` = combinedD%>%
   filter((esource=="proteomics"&source=="CERES")|(esource=="CCLE"&source=="DEMETER"))%>%
   select(DepMap_ID,
          Expression_gene_symbol = Egene,
@@ -122,48 +127,51 @@ combinedD%>%
          Dependency_gene_symbol = Dgene,
          Dependency_value = Dependency,
          Dependency_data_source = source,
-         Mutation)%>%
-  openxlsx::write.xlsx(file = "~/Desktop/Figure_3E.xlsx")
+         Mutation),
+  Statistics = combinedD%>%
+    filter((esource=="proteomics"&source=="CERES")|(esource=="CCLE"&source=="DEMETER"))%>%
+    select(DepMap_ID,
+           Expression_gene_symbol = Egene,
+           Expression_value  = expr,
+           Expression_data_source = esource,
+           Dependency_gene_symbol = Dgene,
+           Dependency_value = Dependency,
+           Dependency_data_source = source,
+           Mutation)%>%
+    group_by(Expression_gene_symbol,Expression_data_source,Dependency_gene_symbol,Dependency_data_source)%>%
+    summarise(`Sample Size`=n(),
+              `Pearson Correlatioin` = round(cor(Expression_value,Dependency_value,method="pearson"),3),
+                `Regression Significance (p value)` = summary(lm(Expression_value~Dependency_value))$coefficients[2,4]%>%
+                formatC(.,format = "E",digits=2))%>%
+    arrange(Expression_data_source,Dependency_gene_symbol))%>%
+  openxlsx::write.xlsx(file ="Data/Figure3e_Data_Statistics.xlsx")
+list(`Plot Data` = combinedD%>%
+       filter((esource=="CCLE"&source=="CERES"))%>%
+       select(DepMap_ID,
+              Expression_gene_symbol = Egene,
+              Expression_value  = expr,
+              Expression_data_source = esource,
+              Dependency_gene_symbol = Dgene,
+              Dependency_value = Dependency,
+              Dependency_data_source = source,
+              Mutation),
+     Statistics = combinedD%>%
+       filter((esource=="CCLE"&source=="CERES"))%>%
+       select(DepMap_ID,
+              Expression_gene_symbol = Egene,
+              Expression_value  = expr,
+              Expression_data_source = esource,
+              Dependency_gene_symbol = Dgene,
+              Dependency_value = Dependency,
+              Dependency_data_source = source,
+              Mutation)%>%
+       group_by(Expression_gene_symbol,Expression_data_source,Dependency_gene_symbol,Dependency_data_source)%>%
+       summarise(`Sample Size`=n(),
+                 `Pearson Correlatioin` = round(cor(Expression_value,Dependency_value,method="pearson"),3),
+                 `Regression Significance (p value)` = summary(lm(Expression_value~Dependency_value))$coefficients[2,4]%>%
+                   formatC(.,format = "E",digits=2))%>%
+       arrange(Expression_data_source,Dependency_gene_symbol))%>%
+  openxlsx::write.xlsx(file = "Data/Extended_Figure3b_Data_Statistics.xlsx")
 
-combinedD%>%
-  filter((esource=="proteomics"&source=="CERES")|(esource=="CCLE"&source=="DEMETER"))%>%
-  select(DepMap_ID,
-         Expression_gene_symbol = Egene,
-         Expression_value  = expr,
-         Expression_data_source = esource,
-         Dependency_gene_symbol = Dgene,
-         Dependency_value = Dependency,
-         Dependency_data_source = source,
-         Mutation)%>%
-  group_by(Expression_gene_symbol,Expression_data_source,Dependency_gene_symbol,Dependency_data_source)%>%
-  summarise(n=n(),p.cor = cor(Expression_value,Dependency_value,method="pearson"),
-            pval = summary(lm(Expression_value~Dependency_value))$coefficients[2,4])%>%
-  arrange(Expression_data_source,Dependency_gene_symbol)
 
-combinedD%>%
-  filter((esource=="CCLE"&source=="CERES"))%>%
-  select(DepMap_ID,
-         Expression_gene_symbol = Egene,
-         Expression_value  = expr,
-         Expression_data_source = esource,
-         Dependency_gene_symbol = Dgene,
-         Dependency_value = Dependency,
-         Dependency_data_source = source,
-         Mutation)%>%
-  openxlsx::write.xlsx(file = "~/Desktop/Figure_S3B.xlsx")
-
-combinedD%>%
-  filter((esource=="CCLE"&source=="CERES"))%>%
-  select(DepMap_ID,
-         Expression_gene_symbol = Egene,
-         Expression_value  = expr,
-         Expression_data_source = esource,
-         Dependency_gene_symbol = Dgene,
-         Dependency_value = Dependency,
-         Dependency_data_source = source,
-         Mutation)%>%
-  group_by(Expression_gene_symbol,Expression_data_source,Dependency_gene_symbol,Dependency_data_source)%>%
-  summarise(n=n(),p.cor = cor(Expression_value,Dependency_value,method="pearson"),
-            pval = summary(lm(Expression_value~Dependency_value))$coefficients[2,4])%>%
-  arrange(Expression_data_source,Dependency_gene_symbol)
 
